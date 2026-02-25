@@ -17,7 +17,7 @@ import os
 import re
 
 
-# V1.0
+# V1.1
 class QuanLog:
     def __init__(self, root):
         self.root = root
@@ -606,6 +606,14 @@ class QuanLog:
         video_thread = threading.Thread(target=self._video_worker, args=(file_path,), daemon=True)
         video_thread.start()
 
+    def _get_scaled_frame_size(self, frame_width, frame_height, max_width, max_height):
+        scale_ratio = min(max_width / frame_width, max_height / frame_height, 1.0)
+
+        new_width = int(frame_width * scale_ratio)
+        new_height = int(frame_height * scale_ratio)
+
+        return new_width, new_height
+
     def _video_worker(self, file_path):
         with self.video_lock:
             self.is_playing_video = True
@@ -613,12 +621,24 @@ class QuanLog:
         self.log_queue.put(f"Playing: {os.path.basename(file_path)}")
 
         cap = cv2.VideoCapture(file_path)
+        if not cap.isOpened():
+            self.log_queue.put(f"Failed to open video: {os.path.basename(file_path)}")
+            self.safe_stop_video()
+            return
+
+        video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
         fps = cap.get(cv2.CAP_PROP_FPS)
         frame_delay = 1000.0 / max(fps, 15)
 
         self.preview_frame.update_idletasks()
-        w = max(self.preview_frame.winfo_width() - 20, 480)
-        h = max(self.preview_frame.winfo_height() - 10, 480)
+        max_display_width = self.preview_frame.winfo_width() - 20
+        max_display_height = self.preview_frame.winfo_height() - 10
+
+        display_width, display_height = self._get_scaled_frame_size(
+            video_width, video_height, max_display_width, max_display_height
+        )
 
         last_frame_time = time.time() * 1000
 
@@ -636,7 +656,7 @@ class QuanLog:
                 time.sleep((frame_delay - elapsed) / 1000)
             last_frame_time = current_time
 
-            frame = cv2.resize(frame, (w, h), interpolation=cv2.INTER_AREA)
+            frame = cv2.resize(frame, (display_width, display_height), interpolation=cv2.INTER_AREA)
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
             img_tk = ImageTk.PhotoImage(img)
