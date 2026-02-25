@@ -171,7 +171,7 @@ class QuanLog:
         core_frame = self._create_label_frame(left_frame, "Text & File Input", padx=10, pady=10, ipady=5)
 
         self.text_input = tkinter.Text(
-            core_frame, height=18, width=30, wrap=WORD, font=("Times New Roman", 10)
+            core_frame, height=14, width=30, wrap=WORD, font=("Times New Roman", 14)
         )
         self.text_input.pack(fill=BOTH, expand=YES, padx=5, pady=5)
         self.text_input.edit_modified(False)
