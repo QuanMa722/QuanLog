@@ -17,7 +17,6 @@ import os
 import re
 
 
-# V1.1
 class QuanLog:
     def __init__(self, root):
         self.root = root
@@ -72,23 +71,46 @@ class QuanLog:
         y = (screen_h - win_h) // 2
         self.root.geometry(f"+{x}+{y}")
 
-    def _truncate_filename(self, filename, max_length=30):
-        if len(filename) <= max_length:
+    def _truncate_filename(self, filename):
+        max_width = 180
+        char_width = 7
+
+        display_width = 0
+        for char in filename:
+            if '\u4e00' <= char <= '\u9fff':
+                display_width += char_width * 2
+            else:
+                display_width += char_width
+
+        if display_width <= max_width:
             return filename
 
         name, ext = os.path.splitext(filename)
-        ext_len = len(ext)
 
-        if ext_len >= max_length:
-            return filename[:max_length]
+        min_name_len = 8
+        if len(name) <= min_name_len:
+            return filename
 
-        avail_len = max_length - ext_len - 3
-        if avail_len <= 0:
-            return filename[:max_length]
+        ext_width = 0
+        for char in ext:
+            if '\u4e00' <= char <= '\u9fff':
+                ext_width += char_width * 2
+            else:
+                ext_width += char_width
 
-        half1 = avail_len * 2 // 3
-        half2 = avail_len - half1
-        return f"{name[:half1]}......{name[-half2:]}{ext}"
+        avail_width = max_width - ext_width - 20
+        avail_chars = max(6, avail_width // char_width)
+
+        keep_chars = min(len(name) // 2, avail_chars // 2)
+        keep_chars = max(3, min(keep_chars, 10))
+
+        first_half = name[:keep_chars]
+        last_half = name[-keep_chars:]
+
+        if len(name) <= keep_chars * 2 + 3:
+            return f"{first_half}...{last_half}{ext}"
+        else:
+            return f"{first_half}...{last_half}{ext}"
 
     def get_unique_file_path(self, target_dir, original_filename, is_text_log=False):
         if is_text_log:
@@ -163,12 +185,12 @@ class QuanLog:
         self.log_queue.put(ui_content)
 
     def _init_ui(self):
-        main_frame = self._create_frame(self.root, padding=5, fill=BOTH, expand=True)
+        main_frame = self._create_frame(self.root, padding=2, fill=BOTH, expand=True)
 
-        left_frame = self._create_frame(main_frame, width=350, fill=BOTH, expand=False, side=LEFT, padx=(0, 5))
+        left_frame = self._create_frame(main_frame, width=350, fill=BOTH, expand=False, side=LEFT, padx=(0, 0))
         left_frame.pack_propagate(False)
 
-        core_frame = self._create_label_frame(left_frame, "Text & File Input", padx=10, pady=10, ipady=5)
+        core_frame = self._create_label_frame(left_frame, "Text & File Input", padx=5, pady=5, ipady=5)
 
         self.text_input = tkinter.Text(
             core_frame, height=14, width=30, wrap=WORD, font=("Times New Roman", 14)
@@ -188,18 +210,18 @@ class QuanLog:
         self.select_btn.pack(side=LEFT, padx=5, expand=YES)
         self.upload_btn.pack(side=RIGHT, padx=5, expand=YES)
 
-        log_frame = self._create_label_frame(left_frame, "Operation Log", padx=10, pady=10, ipady=5)
+        log_frame = self._create_label_frame(left_frame, "Operation Log", padx=5, pady=5, ipady=5)
         self.log_text = tkinter.Text(
-            log_frame, height=10, width=30, wrap=WORD, font=("Times New Roman", 12)
+            log_frame, height=10, width=30, wrap=WORD, font=("Times New Roman", 14)
         )
         self.log_text.pack(fill=BOTH, expand=YES, padx=5, pady=5)
         self.log_text.config(state=DISABLED)
         self.log_text.bind("<MouseWheel>", self._on_mouse_wheel)
 
-        mid_frame = self._create_frame(main_frame, width=500, fill=BOTH, expand=True, side=LEFT, padx=(0, 5))
+        mid_frame = self._create_frame(main_frame, width=500, fill=BOTH, expand=True, side=LEFT, padx=(0, 0))
         mid_frame.pack_propagate(False)
 
-        self.preview_frame = self._create_frame(mid_frame, padding=10, fill=BOTH, expand=True)
+        self.preview_frame = self._create_frame(mid_frame, padding=5, fill=BOTH, expand=True)
 
         self.preview_text = tkinter.Text(
             self.preview_frame, wrap=WORD, state=DISABLED, font=("Times New Roman", 15)
@@ -212,18 +234,18 @@ class QuanLog:
         self.preview_scrollbar.pack(side=RIGHT, fill=Y)
         self.preview_text.bind("<MouseWheel>", self._on_mouse_wheel)
 
-        right_frame = self._create_frame(main_frame, width=300, fill=BOTH, expand=True, side=RIGHT)
+        right_frame = self._create_frame(main_frame, width=200, fill=BOTH, expand=True, side=RIGHT)
         right_frame.pack_propagate(False)
 
-        search_frame = self._create_frame(right_frame, padding=(5, 5, 5, 0), fill=X, side=TOP)
+        search_frame = self._create_frame(right_frame, padding=(2, 2, 2, 0), fill=X, side=TOP)
         ttkbs.Label(
             search_frame, text="Search:", font=("Times New Roman", 10, "bold")
-        ).pack(side=LEFT, padx=(0, 5))
+        ).pack(side=LEFT, padx=(0, 2))
         self.search_entry = ttkbs.Entry(search_frame, font=("Times New Roman", 10))
         self.search_entry.pack(fill=X, expand=YES, side=LEFT)
         self.search_entry.bind("<KeyRelease>", self.filter_file_list)
 
-        file_list_frame = self._create_frame(right_frame, padding=5, fill=BOTH, expand=True, side=BOTTOM)
+        file_list_frame = self._create_frame(right_frame, padding=2, fill=BOTH, expand=True, side=BOTTOM)
         self.file_tree = ttkbs.Treeview(file_list_frame, show="tree")
         self.file_tree.pack(fill=BOTH, expand=True)
         self.file_tree.bind("<<TreeviewSelect>>", self.on_file_click)
@@ -514,7 +536,10 @@ class QuanLog:
             self.preview_text.pack(fill=BOTH, expand=YES, side=LEFT)
             self.preview_scrollbar.pack(side=RIGHT, fill=Y)
         elif preview_type == "media":
-            self.preview_media_label = ttkbs.Label(self.preview_frame)
+            self.preview_media_label = ttkbs.Label(
+                self.preview_frame,
+                anchor=CENTER
+            )
             self.preview_media_label.pack(fill=BOTH, expand=YES, side=LEFT)
 
     def _preview_text(self, file_path):
@@ -579,6 +604,8 @@ class QuanLog:
         img_tk = ImageTk.PhotoImage(img)
         self.preview_media_label.config(image=img_tk)
         self.preview_media_label.image = img_tk
+
+        self.preview_media_label.pack_configure(anchor=CENTER, expand=True)
 
     def safe_stop_video(self):
         with self.video_lock:
