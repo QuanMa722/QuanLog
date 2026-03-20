@@ -190,7 +190,7 @@ class QuanLog:
         left_frame = self._create_frame(main_frame, width=350, fill=BOTH, expand=False, side=LEFT, padx=(0, 0))
         left_frame.pack_propagate(False)
 
-        core_frame = self._create_label_frame(left_frame, "Text & File Input", padx=5, pady=5, ipady=5)
+        core_frame = self._create_label_frame(left_frame, "Text & File Input", padx=(0, 0))
 
         self.text_input = tkinter.Text(
             core_frame, height=14, width=30, wrap=WORD, font=("Times New Roman", 14)
@@ -210,7 +210,7 @@ class QuanLog:
         self.select_btn.pack(side=LEFT, padx=5, expand=YES)
         self.upload_btn.pack(side=RIGHT, padx=5, expand=YES)
 
-        log_frame = self._create_label_frame(left_frame, "Operation Log", padx=5, pady=5, ipady=5)
+        log_frame = self._create_label_frame(left_frame, "Operation Log", padx=(0, 0))
         self.log_text = tkinter.Text(
             log_frame, height=10, width=30, wrap=WORD, font=("Times New Roman", 14)
         )
@@ -237,7 +237,7 @@ class QuanLog:
         right_frame = self._create_frame(main_frame, width=200, fill=BOTH, expand=True, side=RIGHT)
         right_frame.pack_propagate(False)
 
-        search_frame = self._create_frame(right_frame, padding=(2, 2, 2, 0), fill=X, side=TOP)
+        search_frame = self._create_frame(right_frame, padding=(2, 2, 2, 2), fill=X, side=TOP)
         ttkbs.Label(
             search_frame, text="Search:", font=("Times New Roman", 10, "bold")
         ).pack(side=LEFT, padx=(0, 2))
@@ -245,7 +245,7 @@ class QuanLog:
         self.search_entry.pack(fill=X, expand=YES, side=LEFT)
         self.search_entry.bind("<KeyRelease>", self.filter_file_list)
 
-        file_list_frame = self._create_frame(right_frame, padding=2, fill=BOTH, expand=True, side=BOTTOM)
+        file_list_frame = self._create_frame(right_frame, padding=0, fill=BOTH, expand=True, side=BOTTOM)
         self.file_tree = ttkbs.Treeview(file_list_frame, show="tree")
         self.file_tree.pack(fill=BOTH, expand=True)
         self.file_tree.bind("<<TreeviewSelect>>", self.on_file_click)
